@@ -6,18 +6,31 @@ import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
 import dynamic from 'next/dynamic';
-import { type FC, type ReactNode } from 'react';
+import { type FC, type ReactNode, useMemo } from 'react';
 
 require('@solana/wallet-adapter-react-ui/styles.css');
 
 // Create a wrapper component that's dynamically imported
 const WalletProviderComponent: FC<{ children: ReactNode }> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
-  const endpoint = clusterApiUrl(network);
+  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
+
+  // Add explicit connection config
+  const config = useMemo(() => ({
+    commitment: 'confirmed',
+    wsEndpoint: endpoint.replace('https', 'wss'),
+    preflightCommitment: 'confirmed',
+  }), [endpoint]);
 
   return (
-    <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={[]} autoConnect>
+    <ConnectionProvider endpoint={endpoint} config={config}>
+      <WalletProvider
+        wallets={[]}
+        autoConnect
+        onError={(error) => {
+          console.error('Wallet error:', error);
+        }}
+      >
         <WalletModalProvider>
           {children}
         </WalletModalProvider>
@@ -31,6 +44,10 @@ export const WalletProviders = dynamic(
   () => Promise.resolve(WalletProviderComponent),
   {
     ssr: false,
-    loading: () => <div>Loading wallet integration...</div>
+    loading: () => (
+      <div className="flex justify-center items-center min-h-screen">
+        <div className="loading loading-spinner loading-lg"></div>
+      </div>
+    )
   }
 );

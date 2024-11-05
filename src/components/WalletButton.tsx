@@ -6,6 +6,7 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useEffect, useState } from 'react';
 import dynamic from 'next/dynamic';
 
+
 // Dynamically import the button with no SSR
 const WalletMultiButtonDynamic = dynamic(
   () => Promise.resolve(WalletMultiButton),
