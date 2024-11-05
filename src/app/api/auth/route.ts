@@ -5,13 +5,13 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: Request) {
   try {
     const { wallet } = await request.json()
+    console.log('Auth route - creating/updating user:', wallet) // Debug log
 
     // Check if user exists
     let user = await prisma.user.findUnique({
       where: { wallet },
     })
 
-    // If no user exists, create one
     if (!user) {
       user = await prisma.user.create({
         data: {
@@ -20,6 +20,7 @@ export async function POST(request: Request) {
           isAdmin: false,
         },
       })
+      console.log('Auth route - created new user:', user) // Debug log
     }
 
     // Check whitelist status
@@ -27,13 +28,15 @@ export async function POST(request: Request) {
       where: { wallet },
     })
 
+    console.log('Auth route - whitelist status:', whitelisted) // Debug log
+
     return NextResponse.json({
       user,
       isWhitelisted: !!whitelisted,
       isActive: user.isActive || !!whitelisted,
     })
   } catch (error) {
-    console.error('Error in auth route:', error)
+    console.error('Auth route error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

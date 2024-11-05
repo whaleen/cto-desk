@@ -10,22 +10,81 @@ datasource db {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  wallet    String   @unique
-  isActive  Boolean  @default(false)
-  isAdmin   Boolean  @default(false)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  sites     Site[] // One user can have multiple sites
+  id            String         @id @default(cuid())
+  wallet        String         @unique
+  isActive      Boolean        @default(false)
+  isAdmin       Boolean        @default(false)
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+  sites         Site[]
+  subscriptions Subscription[]
+  credits       Credit[]
+}
+
+model Subscription {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id])
+  product          Product   @relation(fields: [productId], references: [id])
+  productId        String
+  status           SubStatus @default(ACTIVE)
+  quantity         Int       @default(1) // Number of sites allowed
+  startDate        DateTime  @default(now())
+  currentPeriodEnd DateTime // When next payment is due
+  cancelAt         DateTime? // Optional cancellation date
+  canceledAt       DateTime? // When they actually canceled
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  payments         Payment[]
+
+  @@index([userId])
+  @@index([productId])
+}
+
+model Product {
+  id            String          @id @default(cuid())
+  name          String // e.g., "Site Hosting"
+  description   String?
+  priceSOL      Float // Price in SOL
+  interval      BillingInterval // MONTHLY, YEARLY
+  isActive      Boolean         @default(true)
+  subscriptions Subscription[]
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+}
+
+model Payment {
+  id              String        @id @default(cuid())
+  subscriptionId  String
+  subscription    Subscription  @relation(fields: [subscriptionId], references: [id])
+  amount          Float // Amount in SOL
+  transactionHash String? // Solana transaction hash
+  status          PaymentStatus @default(PENDING)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  @@index([subscriptionId])
+}
+
+model Credit {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  amount    Int // Number of sites credited
+  reason    String? // Why the credit was given
+  expiresAt DateTime? // Optional expiration
+  createdAt DateTime  @default(now())
+  createdBy String // Admin wallet that created the credit
+
+  @@index([userId])
 }
 
 model Site {
   id           String   @id @default(cuid())
-  name         String // Site name
-  description  String? // Optional description
-  subdomain    String?  @unique // e.g., "alice" for alice.yourdomain.com
-  customDomain String?  @unique // Their own domain if they want
-  userId       String // Who owns this site
+  name         String
+  subdomain    String?  @unique
+  customDomain String?  @unique
+  userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
@@ -37,4 +96,23 @@ model Whitelist {
   id        String   @id @default(cuid())
   wallet    String   @unique
   createdAt DateTime @default(now())
+}
+
+enum SubStatus {
+  ACTIVE
+  PAST_DUE
+  CANCELED
+  SUSPENDED
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
+  REFUNDED
+}
+
+enum BillingInterval {
+  MONTHLY
+  YEARLY
 }

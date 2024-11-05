@@ -1,41 +1,60 @@
-// src/app/dashboard/page.tsx - Let's update the check function
+// src/app/dashboard/page.tsx
 'use client';
 
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useState, useEffect } from 'react';
 import { WalletButton } from '@/components/WalletButton';
 
+interface Site {
+  id: string;
+  name: string;
+  subdomain: string | null;
+  customDomain: string | null;
+}
+
 export default function Dashboard() {
   const { connected, publicKey } = useWallet();
   const [isWhitelisted, setIsWhitelisted] = useState(false);
+  const [sites, setSites] = useState<Site[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (connected && publicKey) {
-      checkWhitelistStatus();
+      checkAccess();
     }
   }, [connected, publicKey]);
 
-  const checkWhitelistStatus = async () => {
+  const checkAccess = async () => {
     try {
       setLoading(true);
       const res = await fetch('/api/auth/check', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ wallet: publicKey?.toString() }),
+        body: JSON.stringify({
+          wallet: publicKey?.toString()
+        }),
       });
 
       if (!res.ok) {
-        throw new Error('Failed to check whitelist status');
+        throw new Error('Failed to verify access');
       }
 
       const data = await res.json();
-      console.log('Whitelist check response:', data); // Debug log
-      setIsWhitelisted(data.isActive || data.isWhitelisted);
+      console.log('Access check response:', data);
+
+      // User is whitelisted if either isActive or has a whitelist record
+      setIsWhitelisted(data.isActive);
+
+      if (data.isActive) {
+        // Fetch sites if user is whitelisted
+        const sitesRes = await fetch('/api/sites');
+        const sitesData = await sitesRes.json();
+        setSites(sitesData.sites);
+      }
     } catch (err) {
-      console.error('Error checking whitelist:', err);
-      setError('Failed to check whitelist status');
+      console.error('Error checking access:', err);
+      setError(err instanceof Error ? err.message : 'Failed to check access');
     } finally {
       setLoading(false);
     }
@@ -43,26 +62,15 @@ export default function Dashboard() {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="flex min-h-screen flex-col items-center justify-center p-24">
         <div className="loading loading-spinner loading-lg"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
-        <div className="alert alert-error">
-          <p>{error}</p>
-        </div>
-        <WalletButton />
       </div>
     );
   }
 
   if (!connected) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="flex min-h-screen flex-col items-center justify-center p-24">
         <h1 className="text-2xl font-bold mb-4">Connect your wallet to continue</h1>
         <WalletButton />
       </div>
@@ -71,74 +79,58 @@ export default function Dashboard() {
 
   if (!isWhitelisted) {
     return (
-      <div className="flex flex-col items-center justify-center min-h-screen">
+      <div className="flex min-h-screen flex-col items-center justify-center p-24">
         <h1 className="text-2xl font-bold mb-4">Your wallet is not whitelisted</h1>
-        <p>Wallet address: {publicKey?.toString()}</p>
-        <p className="mt-4">Please contact the administrator for access.</p>
+        <p className="mb-4">Wallet: {publicKey?.toString()}</p>
         <WalletButton />
       </div>
     );
   }
 
-
   return (
-    <div className="max-w-6xl mx-auto px-4 py-8">
-      <div className="flex justify-between items-center mb-8">
-        <h1 className="text-2xl font-bold">Your Sites</h1>
-        <div className="flex gap-4">
+    <div className="flex min-h-screen flex-col items-center p-24">
+      <div className="w-full max-w-5xl">
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold">Your Dashboard</h1>
           <WalletButton />
-          <button
-            onClick={() => router.push('/dashboard/new')}
-            className="btn btn-primary"
-          >
-            Create New Site
-          </button>
         </div>
-      </div>
 
-      {sites.length === 0 ? (
-        <div className="text-center py-12">
-          <h2 className="text-xl mb-4">You haven't created any sites yet</h2>
-          <button
-            onClick={() => router.push('/dashboard/new')}
-            className="btn btn-primary"
-          >
-            Create Your First Site
-          </button>
-        </div>
-      ) : (
+        {error && (
+          <div className="alert alert-error mb-4">
+            {error}
+          </div>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="card bg-base-100 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title">Create New Site</h2>
+              <p>Start building your new site</p>
+              <div className="card-actions justify-end">
+                <button className="btn btn-primary">Create Site</button>
+              </div>
+            </div>
+          </div>
+
           {sites.map((site) => (
             <div key={site.id} className="card bg-base-100 shadow-xl">
               <div className="card-body">
                 <h2 className="card-title">{site.name}</h2>
-                <p className="text-sm opacity-70">
-                  {site.subdomain}.yourdomain.com
-                </p>
-                {site.customDomain && (
-                  <p className="text-sm opacity-70">{site.customDomain}</p>
+                {site.subdomain && (
+                  <p>{site.subdomain}.yourdomain.com</p>
                 )}
-                <div className="card-actions justify-end mt-4">
-                  <button
-                    onClick={() => router.push(`/dashboard/sites/${site.id}`)}
-                    className="btn btn-primary btn-sm"
-                  >
-                    Manage
-                  </button>
-                  <a
-                    href={`https://${site.subdomain}.yourdomain.com`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="btn btn-ghost btn-sm"
-                  >
-                    Visit
-                  </a>
+                {site.customDomain && (
+                  <p>{site.customDomain}</p>
+                )}
+                <div className="card-actions justify-end">
+                  <button className="btn btn-outline btn-sm">Edit</button>
+                  <button className="btn btn-primary btn-sm">View</button>
                 </div>
               </div>
             </div>
           ))}
         </div>
-      )}
+      </div>
     </div>
   );
 }

@@ -6,18 +6,24 @@ import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
 import { useEffect, useState } from 'react';
 
 export function WalletButton() {
-  const { connected, publicKey } = useWallet();
+  const { connected, publicKey, connecting, disconnecting, wallet } = useWallet();
   const [error, setError] = useState<string | null>(null);
+  const [mounted, setMounted] = useState(false);
 
+  // Handle mounting first
   useEffect(() => {
-    if (connected && publicKey) {
+    setMounted(true);
+  }, []);
+
+  // Handle wallet connection after mounting
+  useEffect(() => {
+    if (mounted && connected && publicKey && !connecting && !disconnecting && wallet) {
       handleConnection();
     }
-  }, [connected, publicKey]);
+  }, [mounted, connected, publicKey, connecting, disconnecting, wallet]);
 
   const handleConnection = async () => {
     try {
-      // First create/update user
       const authRes = await fetch('/api/auth', {
         method: 'POST',
         headers: {
@@ -30,7 +36,6 @@ export function WalletButton() {
 
       if (!authRes.ok) throw new Error('Auth failed');
 
-      // Then check status
       const checkRes = await fetch('/api/auth/check', {
         method: 'POST',
         headers: {
@@ -50,6 +55,16 @@ export function WalletButton() {
       setError(err instanceof Error ? err.message : 'Connection failed');
     }
   };
+
+  // Initial loading state during SSR and hydration
+  if (!mounted) {
+    return <button className="btn">Loading...</button>;
+  }
+
+  // Connecting state
+  if (connecting) {
+    return <button className="btn">Connecting...</button>;
+  }
 
   return (
     <div>
