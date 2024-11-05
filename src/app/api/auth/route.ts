@@ -17,12 +17,21 @@ export async function POST(request: Request) {
         data: {
           wallet,
           isActive: false,
-          isAdmin: false, // New users are not admins by default
+          isAdmin: false,
         },
       })
     }
 
-    return NextResponse.json({ user })
+    // Check whitelist status
+    const whitelisted = await prisma.whitelist.findUnique({
+      where: { wallet },
+    })
+
+    return NextResponse.json({
+      user,
+      isWhitelisted: !!whitelisted,
+      isActive: user.isActive || !!whitelisted,
+    })
   } catch (error) {
     console.error('Error in auth route:', error)
     return NextResponse.json(

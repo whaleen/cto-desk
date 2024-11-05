@@ -5,30 +5,26 @@ import { prisma } from '@/lib/prisma'
 export async function POST(request: Request) {
   try {
     const { wallet } = await request.json()
+    console.log('Checking wallet status:', wallet)
 
-    if (!wallet) {
-      return NextResponse.json(
-        { error: 'No wallet address provided' },
-        { status: 400 }
-      )
-    }
+    const [user, whitelisted] = await Promise.all([
+      prisma.user.findUnique({
+        where: { wallet },
+      }),
+      prisma.whitelist.findUnique({
+        where: { wallet },
+      }),
+    ])
 
-    // Check both user and whitelist status
-    const user = await prisma.user.findUnique({
-      where: { wallet },
-    })
-
-    const whitelisted = await prisma.whitelist.findUnique({
-      where: { wallet },
-    })
+    console.log('User record:', user)
+    console.log('Whitelist record:', whitelisted)
 
     return NextResponse.json({
       isActive: user?.isActive || !!whitelisted,
-      user,
-      whitelisted,
+      isAdmin: user?.isAdmin || false,
     })
   } catch (error) {
-    console.error('Auth check error:', error)
+    console.error('Check auth error:', error)
     return NextResponse.json(
       { error: 'Failed to check auth status' },
       { status: 500 }
