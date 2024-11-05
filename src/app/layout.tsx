@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { WalletProviders } from '@/providers/WalletProvider';
 import "./globals.css";
+import { StrictMode } from 'react';
+
 
 const geistSans = localFont({
   src: "./fonts/GeistVF.woff",
@@ -32,8 +34,11 @@ export default function RootLayout({
         <a href="/admin">Admin</a> |&nbsp;
         <a href="/dashboard">Dashboard</a>
 
-
-        <WalletProviders>{children}</WalletProviders>
+        <StrictMode>
+          <WalletProviders>
+            {children}
+          </WalletProviders>
+        </StrictMode>
       </body>
     </html>
   );
