@@ -5,28 +5,15 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { ConnectionProvider, WalletProvider } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { clusterApiUrl } from '@solana/web3.js';
-import { FC, ReactNode, useMemo, useEffect, useState } from 'react';
+import dynamic from 'next/dynamic';
+import { type FC, type ReactNode } from 'react';
 
 require('@solana/wallet-adapter-react-ui/styles.css');
 
-export const WalletProviders: FC<{ children: ReactNode }> = ({ children }) => {
-  // Track if window is available
-  const [isWindowAvailable, setIsWindowAvailable] = useState(false);
-
-  useEffect(() => {
-    setIsWindowAvailable(true);
-  }, []);
-
+// Create a wrapper component that's dynamically imported
+const WalletProviderComponent: FC<{ children: ReactNode }> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
-  const endpoint = useMemo(
-    () => clusterApiUrl(network),
-    [network]
-  );
-
-  // Only render wallet components on client side
-  if (!isWindowAvailable) {
-    return <>{children}</>;
-  }
+  const endpoint = clusterApiUrl(network);
 
   return (
     <ConnectionProvider endpoint={endpoint}>
@@ -38,3 +25,12 @@ export const WalletProviders: FC<{ children: ReactNode }> = ({ children }) => {
     </ConnectionProvider>
   );
 };
+
+// Export a dynamic version of the wrapper that's only rendered client-side
+export const WalletProviders = dynamic(
+  () => Promise.resolve(WalletProviderComponent),
+  {
+    ssr: false,
+    loading: () => <div>Loading wallet integration...</div>
+  }
+);
