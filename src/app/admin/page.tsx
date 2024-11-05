@@ -1,10 +1,10 @@
-
 // src/app/admin/page.tsx
 'use client';
 
 import { useWallet } from '@solana/wallet-adapter-react';
 import { useEffect, useState } from 'react';
 import { WalletButton } from '@/components/WalletButton';
+import { useRouter } from 'next/navigation';
 
 interface User {
   id: string;
@@ -15,15 +15,33 @@ interface User {
 
 export default function AdminDashboard() {
   const { connected, publicKey } = useWallet();
+  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAdmin, setIsAdmin] = useState<boolean | null>(null);
 
   useEffect(() => {
-    if (!connected || !publicKey) return;
-
-    fetchUsers();
+    if (connected && publicKey) {
+      checkAdmin();
+    }
   }, [connected, publicKey]);
+
+  const checkAdmin = async () => {
+    const res = await fetch('/api/admin/check', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ wallet: publicKey?.toString() }),
+    });
+    const data = await res.json();
+
+    if (!data.isAdmin) {
+      router.push('/'); // Redirect non-admins
+    } else {
+      setIsAdmin(true);
+      fetchUsers();
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -64,6 +82,10 @@ export default function AdminDashboard() {
     );
   }
 
+  if (!isAdmin) {
+    return null; // Optionally add a loading state
+  }
+
   return (
     <div className="container mx-auto p-4">
       <div className="flex justify-between items-center mb-8">
@@ -72,8 +94,19 @@ export default function AdminDashboard() {
       </div>
 
       {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-4" role="alert">
-          {error}
+        <div role="alert" className="alert alert-error">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            className="h-6 w-6 shrink-0 stroke-current"
+            fill="none"
+            viewBox="0 0 24 24">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth="2"
+              d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+          <span>{error}</span>
         </div>
       )}
 
@@ -117,6 +150,3 @@ export default function AdminDashboard() {
     </div>
   );
 }
-
-
-

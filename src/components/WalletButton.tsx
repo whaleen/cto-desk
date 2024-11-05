@@ -3,18 +3,25 @@
 
 import { useWallet } from '@solana/wallet-adapter-react';
 import { WalletMultiButton } from '@solana/wallet-adapter-react-ui';
+import { useEffect } from 'react';
 
 export function WalletButton() {
   const { connected, publicKey } = useWallet();
 
-  return (
-    <div className="flex flex-col items-center gap-4">
-      <WalletMultiButton className="btn" />
-      {connected && (
-        <span className="text-sm opacity-50">
-          Connected: {publicKey?.toString().slice(0, 4)}...{publicKey?.toString().slice(-4)}
-        </span>
-      )}
-    </div>
-  );
+  useEffect(() => {
+    if (connected && publicKey) {
+      // Create user when wallet connects
+      fetch('/api/auth', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          wallet: publicKey.toString(),
+        }),
+      });
+    }
+  }, [connected, publicKey]);
+
+  return <WalletMultiButton className="btn btn-primary" />;
 }

@@ -6,13 +6,19 @@ export async function POST(request: Request) {
   try {
     const { wallet } = await request.json()
 
+    // Check if user exists
     let user = await prisma.user.findUnique({
       where: { wallet },
     })
 
+    // If no user exists, create one
     if (!user) {
       user = await prisma.user.create({
-        data: { wallet, isActive: false },
+        data: {
+          wallet,
+          isActive: false,
+          isAdmin: false, // New users are not admins by default
+        },
       })
     }
 
