@@ -6,6 +6,8 @@ import { useRouter, useParams } from 'next/navigation'; // Add useParams
 import { useWallet } from '@solana/wallet-adapter-react';
 import { getBaseUrl } from '@/lib/domain';
 import { SiteThemePreview } from '@/components/SiteThemePreview';
+import { useWalletStore } from '@/stores/useWalletStore';
+
 
 type TabType = 'general' | 'profile' | 'design';
 
@@ -50,7 +52,7 @@ export default function EditSite() {  // Remove params prop
   const params = useParams();
   const siteId = params.id as string;
   const router = useRouter();
-  const { connected, publicKey } = useWallet();
+  const { isConnected, wallet } = useWalletStore();
   const [activeTab, setActiveTab] = useState<TabType>('general');
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -58,34 +60,36 @@ export default function EditSite() {  // Remove params prop
   const [formData, setFormData] = useState<SiteData | null>(null);
 
   useEffect(() => {
-    if (siteId) {
+    if (siteId && isConnected && wallet) {
       fetchSiteData();
     }
-  }, [siteId]);
-
+  }, [siteId, isConnected, wallet]);
 
   const fetchSiteData = async () => {
+    setLoading(true);
     try {
       const response = await fetch(`/api/sites/${siteId}`, {
-
         headers: {
-          'x-wallet-address': publicKey?.toString() || ''
+          'x-wallet-address': wallet || ''
         }
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        throw new Error('Failed to fetch site data');
+        throw new Error(data.error || 'Failed to fetch site data');
       }
 
-      const data = await response.json();
       setFormData(data.site);
     } catch (err) {
-      setError('Failed to load site data');
-      console.error(err);
+      console.error('Error in fetchSiteData:', err);
+      setError(err instanceof Error ? err.message : 'Failed to load site data');
     } finally {
       setLoading(false);
     }
   };
+
+
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
@@ -390,11 +394,10 @@ export default function EditSite() {  // Remove params prop
 
     try {
       const response = await fetch(`/api/sites/${siteId}`, {
-
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-wallet-address': publicKey?.toString() || ''
+          'x-wallet-address': wallet || ''
         },
         body: JSON.stringify(formData)
       });
@@ -411,7 +414,7 @@ export default function EditSite() {  // Remove params prop
     }
   };
 
-  if (!connected) {
+  if (!isConnected) {
     return (
       <div className="hero min-h-screen">
         <div className="hero-content text-center">

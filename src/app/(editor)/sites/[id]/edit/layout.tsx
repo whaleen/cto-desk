@@ -7,12 +7,8 @@ export default function EditLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html>
-      <body>
-        <div data-theme="light" className="min-h-screen bg-base-100">
-          {children}
-        </div>
-      </body>
-    </html>
+    <div data-theme="light" className="min-h-screen bg-base-100">
+      {children}
+    </div>
   );
 }

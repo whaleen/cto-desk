@@ -1,6 +1,5 @@
 // src/lib/auth.ts
 import { prisma } from '@/lib/prisma'
-import { getUserCreditBalance } from '@/lib/credits'
 
 export async function getEnrichedUser(wallet: string) {
   const user = await prisma.user.findUnique({
@@ -11,16 +10,9 @@ export async function getEnrichedUser(wallet: string) {
       isActive: true,
       isAdmin: true,
       createdAt: true,
+      creditBalance: true, // Add this to the schema if not present
     },
   })
 
-  if (!user) return null
-
-  // Get current credit balance
-  const creditBalance = await getUserCreditBalance(user.id)
-
-  return {
-    ...user,
-    creditBalance,
-  }
+  return user
 }
