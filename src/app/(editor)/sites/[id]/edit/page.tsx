@@ -1,93 +1,138 @@
 // src/app/(editor)/sites/[id]/edit/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useWalletStore } from '@/stores/useWalletStore';
 import { getBaseUrl } from '@/lib/domain';
 import { SiteThemePreview } from '@/components/SiteThemePreview';
-
-// Move interfaces and constants to separate file
 import { SiteData, defaultTheme, TabType } from '@/types/site';
 import { TabNav } from '@/components/site-editor/TabNav';
 import { TabContent } from '@/components/site-editor/TabContent';
 
+
 export default function EditSite() {
   const params = useParams();
   const router = useRouter();
-  const { wallet, isConnected } = useWalletStore();
+  const { wallet, isConnected, isInitialized } = useWalletStore();
+
+  console.log('EditSite Render:', {
+    wallet,
+    isConnected,
+    isInitialized,
+    id: params.id
+  });
 
   const [activeTab, setActiveTab] = useState<TabType>('general');
   const [formData, setFormData] = useState<SiteData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true); // Start with loading true
 
-  // Single effect for data fetching
-  useEffect(() => {
-    async function loadSite() {
-      if (!isConnected || !wallet) return;
-
-      try {
-        const response = await fetch(`/api/sites/${params.id}`, {
-          headers: { 'x-wallet-address': wallet }
-        });
-
-        if (!response.ok) throw new Error('Failed to load site');
-
-        const data = await response.json();
-        setFormData(data.site);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load site');
-      }
-    }
-
-    loadSite();
-  }, [params.id, isConnected, wallet]);
-
-  // Form handlers
-  const handleInputChange = (name: string, value: string) => {
+  const handleInputChange = useCallback((name: string, value: string) => {
     setFormData(prev => prev ? { ...prev, [name]: value } : null);
-  };
+  }, []);
 
-  const handleThemeChange = (key: string, value: string) => {
+  const handleThemeChange = useCallback((key: string, value: string) => {
     setFormData(prev => {
       if (!prev) return null;
       return {
         ...prev,
-        theme: { ...prev.theme, [key]: value }
+        theme: { ...(prev.theme || defaultTheme), [key]: value }
       };
     });
-  };
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData) return;
-
-    setIsSaving(true);
-    setError(null);
+    if (!formData || !wallet) return;
 
     try {
+      setIsSaving(true);
+      setError(null);
+
       const response = await fetch(`/api/sites/${params.id}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
-          'x-wallet-address': wallet || ''
+          'x-wallet-address': wallet
         },
         body: JSON.stringify(formData)
       });
 
-      if (!response.ok) throw new Error('Failed to update site');
+      const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to update site');
+      }
 
       router.push('/dashboard');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update site');
+      console.error('Error saving:', err);
+      setError(err instanceof Error ? err.message : 'Failed to save site');
     } finally {
       setIsSaving(false);
     }
   };
 
-  // Early returns for loading/error states
-  if (!isConnected) {
+  useEffect(() => {
+    console.log('UseEffect Triggered:', {
+      wallet,
+      isConnected,
+      isInitialized,
+      id: params.id
+    });
+
+    if (!isInitialized || !wallet || !isConnected) {
+      console.log('Early return:', {
+        isInitialized,
+        wallet,
+        isConnected
+      });
+      setIsLoading(false);
+      return;
+    }
+
+    let ignore = false;
+
+    async function loadSite() {
+      console.log('Loading site data...');
+      try {
+        const response = await fetch(`/api/sites/${params.id}`, {
+          headers: { 'x-wallet-address': wallet }
+        });
+
+        const data = await response.json();
+        console.log('Response:', data);
+
+        if (!ignore) {
+          if (!response.ok) {
+            throw new Error(data.error || 'Failed to load site');
+          }
+
+          setFormData(data.site);
+        }
+      } catch (err) {
+        console.error('Load error:', err);
+        if (!ignore) {
+          setError(err instanceof Error ? err.message : 'Failed to load site');
+        }
+      } finally {
+        if (!ignore) {
+          setIsLoading(false);
+        }
+      }
+    }
+
+    loadSite();
+
+    return () => {
+      ignore = true;
+    };
+  }, [params.id, wallet, isConnected, isInitialized]);
+
+
+  // Single loading/error state check
+  if (!isConnected || !wallet) {
     return (
       <div className="hero min-h-screen">
         <div className="hero-content text-center">
@@ -97,7 +142,7 @@ export default function EditSite() {
     );
   }
 
-  if (!formData) {
+  if (isLoading || !formData) {
     return (
       <div className="hero min-h-screen">
         <div className="hero-content text-center">
@@ -107,7 +152,7 @@ export default function EditSite() {
     );
   }
 
-  // Main render
+  // Main render...
   return (
     <div className="container mx-auto p-4 max-w-4xl">
       <div className="card bg-base-200 shadow-xl">

@@ -5,14 +5,15 @@ import { WalletAdapterNetwork } from '@solana/wallet-adapter-base';
 import { ConnectionProvider, WalletProvider, useWallet } from '@solana/wallet-adapter-react';
 import { WalletModalProvider } from '@solana/wallet-adapter-react-ui';
 import { PhantomWalletAdapter } from '@solana/wallet-adapter-phantom';
-import { clusterApiUrl, Commitment, PublicKey } from '@solana/web3.js';
+import { clusterApiUrl, type Commitment, PublicKey } from '@solana/web3.js';
 import dynamic from 'next/dynamic';
 import { type FC, type ReactNode, useMemo, useEffect } from 'react';
 import { useWalletStore } from '@/stores/useWalletStore';
 
+
+
 require('@solana/wallet-adapter-react-ui/styles.css');
 
-// Add Phantom wallet types
 interface PhantomEvent {
   type: string;
   data: unknown;
@@ -33,14 +34,14 @@ interface WindowWithPhantom extends Window {
   };
 }
 
-// Separate component to handle wallet state management
 const WalletStateHandler: FC<{ children: ReactNode }> = ({ children }) => {
-  const { connected, publicKey, wallet } = useWallet();
-  const setCurrentAddress = useWalletStore(state => state.setCurrentAddress);
+  const { connected, publicKey } = useWallet();
   const setWalletState = useWalletStore(state => state.setWalletState);
+  const setCurrentAddress = useWalletStore(state => state.setCurrentAddress);
+
+  console.log('WalletStateHandler:', { connected, publicKey });
 
   const updateWalletState = async (address: string) => {
-    console.log('Updating wallet state for address:', address);
     try {
       const res = await fetch('/api/auth/check', {
         method: 'POST',
@@ -54,7 +55,9 @@ const WalletStateHandler: FC<{ children: ReactNode }> = ({ children }) => {
           isConnected: true,
           isAdmin: data.isAdmin,
           isWhitelisted: data.isActive,
-          wallet: address
+          wallet: address,
+          isInitialized: true  // Add this
+
         });
       } else {
         throw new Error('Failed to verify wallet');
@@ -65,31 +68,38 @@ const WalletStateHandler: FC<{ children: ReactNode }> = ({ children }) => {
         isConnected: false,
         isAdmin: false,
         isWhitelisted: false,
-        wallet: null
+        wallet: null,
+        isInitialized: true  // Add this
       });
     }
   };
 
-  // Handle initial connection and subsequent changes
+  // Handle wallet connection changes
   useEffect(() => {
+    console.log('WalletStateHandler Effect:', {
+      connected,
+      publicKey: publicKey?.toString()
+    });
+
     if (connected && publicKey) {
       const address = publicKey.toString();
-      console.log('Wallet connected:', address);
       setCurrentAddress(address);
       updateWalletState(address);
     } else {
-      console.log('Wallet disconnected');
+      console.log('No wallet connection');
+
       setCurrentAddress(null);
       setWalletState({
         isConnected: false,
         isAdmin: false,
         isWhitelisted: false,
-        wallet: null
+        wallet: null,
+        isInitialized: true  // Add this
       });
     }
   }, [connected, publicKey, setCurrentAddress, setWalletState]);
 
-  // Handle Phantom-specific account changes
+  // Handle Phantom account changes
   useEffect(() => {
     const handleAccountChange = async (event: PhantomEvent) => {
       const phantom = (window as WindowWithPhantom).phantom?.solana;
@@ -101,19 +111,15 @@ const WalletStateHandler: FC<{ children: ReactNode }> = ({ children }) => {
       }
     };
 
-    // Set up account change listener
     const setupPhantomListener = () => {
       const phantom = (window as WindowWithPhantom).phantom?.solana;
       if (phantom) {
         console.log('Setting up Phantom account change listener');
         phantom.on('accountChanged', handleAccountChange);
-        return () => {
-          phantom.off('accountChanged', handleAccountChange);
-        };
+        return () => phantom.off('accountChanged', handleAccountChange);
       }
     };
 
-    // Delay setup slightly to ensure provider is ready
     const timeoutId = setTimeout(setupPhantomListener, 100);
 
     return () => {
@@ -130,12 +136,7 @@ const WalletStateHandler: FC<{ children: ReactNode }> = ({ children }) => {
 
 const WalletProviderComponent: FC<{ children: ReactNode }> = ({ children }) => {
   const network = WalletAdapterNetwork.Devnet;
-  const endpoint = useMemo(() => clusterApiUrl(network), [network]);
-
-  const wallets = useMemo(
-    () => [new PhantomWalletAdapter()],
-    []
-  );
+  const endpoint = useMemo(() => clusterApiUrl(network), []);
 
   const config = useMemo(() => ({
     commitment: 'confirmed' as Commitment,
@@ -143,19 +144,13 @@ const WalletProviderComponent: FC<{ children: ReactNode }> = ({ children }) => {
     preflightCommitment: 'confirmed' as Commitment,
   }), [endpoint]);
 
+  const wallets = useMemo(() => [new PhantomWalletAdapter()], []);
+
   return (
     <ConnectionProvider endpoint={endpoint} config={config}>
-      <WalletProvider
-        wallets={wallets}
-        autoConnect
-        onError={(error) => {
-          console.error('Wallet error:', error);
-        }}
-      >
+      <WalletProvider wallets={wallets} autoConnect>
         <WalletModalProvider>
-          <WalletStateHandler>
-            {children}
-          </WalletStateHandler>
+          <WalletStateHandler>{children}</WalletStateHandler>
         </WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>
@@ -168,7 +163,7 @@ export const WalletProviders = dynamic(
     ssr: false,
     loading: () => (
       <div className="flex justify-center items-center min-h-screen">
-        <div className="loading loading-spinner loading-lg"></div>
+        <div className="loading loading-spinner loading-lg" />
       </div>
     )
   }

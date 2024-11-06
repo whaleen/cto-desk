@@ -7,6 +7,10 @@ import { WalletButton } from '@/components/WalletButton';
 import { useWalletStore } from '@/stores/useWalletStore';
 import Link from 'next/link';
 import PurchaseCredits from '@/components/PurchaseCredits';
+import { useRouter } from 'next/navigation'
+
+
+
 
 interface Site {
   id: string;
@@ -32,6 +36,7 @@ export default function Dashboard() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const router = useRouter()
 
   // Check access when wallet changes
   useEffect(() => {
@@ -220,7 +225,7 @@ export default function Dashboard() {
       )}
 
       {/* Sites Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {/* Create New Site Card */}
         <div className="card bg-base-400 card-bordered">
           <div className="card-body">
@@ -263,9 +268,16 @@ export default function Dashboard() {
                 <div className="badge badge-secondary">{site.customDomain}</div>
               )}
               <div className="card-actions justify-end">
-                <Link href={`/sites/${site.id}/edit`}>
-                  <button className="btn btn-ghost btn-sm">Edit</button>
-                </Link>
+
+                <button
+                  className="btn btn-ghost btn-sm"
+                  onClick={() => {
+                    // Force a full page navigation instead of client-side
+                    window.location.href = `/sites/${site.id}/edit`
+                  }}
+                >
+                  Edit
+                </button>
                 <Link href={`/${site.subdomain}`}>
                   <button className="btn btn-primary btn-sm">View</button>
                 </Link>

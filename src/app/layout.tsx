@@ -33,6 +33,8 @@ export default function RootLayout({
         <StrictMode>
           <WalletProviders>
             <div className="flex flex-col min-h-screen">
+
+
               <div className="navbar bg-base-200/50 backdrop-blur supports-[backdrop-filter]:bg-base-200/50 sticky top-0 z-50">
                 <div className="navbar-start">
                   <div className="dropdown lg:hidden">
