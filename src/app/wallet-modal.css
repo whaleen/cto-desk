@@ -1,0 +1,132 @@
+/* Base modal structure - make sure it breaks out of any containers */
+.wallet-adapter-modal-wrapper {
+  background-color: hsl(var(--b1)) !important;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  z-index: 9999 !important;
+  /* Increased z-index to ensure it's above everything */
+}
+
+.wallet-adapter-modal {
+  background-color: hsl(var(--b1)) !important;
+  border: 1px solid hsl(var(--b3));
+  border-radius: 0;
+  width: 28rem;
+  max-width: calc(100vw - 2rem);
+  position: relative !important;
+  /* Changed to relative */
+  font-family: var(--font-fira-code);
+}
+
+/* Remove any opacity/overlays */
+.wallet-adapter-modal *,
+.wallet-adapter-modal-container,
+.wallet-adapter-modal-wrapper * {
+  background-color: inherit !important;
+}
+
+.wallet-adapter-modal-container {
+  padding: 1.5rem;
+}
+
+.wallet-adapter-modal-overlay {
+  display: none;
+}
+
+/* Header elements */
+.wallet-adapter-modal-title {
+  color: hsl(var(--bc));
+  font-family: var(--font-fira-code);
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0;
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.wallet-adapter-modal-button-close {
+  background-color: hsl(var(--b2)) !important;
+  color: hsl(var(--bc));
+  border: none;
+  padding: 0.5rem;
+  height: 2rem;
+  width: 2rem;
+  position: absolute;
+  right: 1rem;
+  top: 1rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.wallet-adapter-modal-button-close:hover {
+  background-color: hsl(var(--b3)) !important;
+}
+
+/* List styling */
+.wallet-adapter-modal-list {
+  margin: 0;
+  padding: 0;
+  width: 100%;
+  list-style: none;
+}
+
+.wallet-adapter-modal-list-item {
+  background-color: hsl(var(--b2)) !important;
+  color: hsl(var(--bc));
+  padding: 1rem;
+  margin: 0.5rem 0;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  border: 1px solid hsl(var(--b3));
+}
+
+.wallet-adapter-modal-list-item:hover {
+  background-color: hsl(var(--b3)) !important;
+}
+
+/* Wallet item contents */
+.wallet-adapter-modal-list-item-icon-container {
+  display: flex;
+  align-items: center;
+  margin-right: 1rem;
+}
+
+.wallet-adapter-modal-list-item-icon {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.wallet-adapter-modal-list-item-name {
+  color: hsl(var(--bc));
+  font-family: var(--font-fira-code);
+  font-size: 1rem;
+  font-weight: 500;
+  flex: 1;
+}
+
+.wallet-adapter-modal-list-item-status {
+  color: hsl(var(--p));
+  font-family: var(--font-fira-code);
+  font-size: 0.875rem;
+}
+
+/* Additional elements if needed */
+.wallet-adapter-modal-middle {
+  color: hsl(var(--bc));
+  font-family: var(--font-fira-code);
+  font-size: 0.875rem;
+  text-align: center;
+  margin: 1rem 0;
+}

@@ -19,6 +19,7 @@ model User {
   sites         Site[]
   subscriptions Subscription[]
   credits       Credit[]
+  creditBalance Int            @default(0)
 }
 
 model Subscription {
@@ -28,11 +29,11 @@ model Subscription {
   product          Product   @relation(fields: [productId], references: [id])
   productId        String
   status           SubStatus @default(ACTIVE)
-  quantity         Int       @default(1) // Number of sites allowed
+  quantity         Int       @default(1)
   startDate        DateTime  @default(now())
-  currentPeriodEnd DateTime // When next payment is due
-  cancelAt         DateTime? // Optional cancellation date
-  canceledAt       DateTime? // When they actually canceled
+  currentPeriodEnd DateTime
+  cancelAt         DateTime?
+  canceledAt       DateTime?
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   payments         Payment[]
@@ -43,10 +44,10 @@ model Subscription {
 
 model Product {
   id            String          @id @default(cuid())
-  name          String // e.g., "Site Hosting"
+  name          String
   description   String?
-  priceSOL      Float // Price in SOL
-  interval      BillingInterval // MONTHLY, YEARLY
+  priceSOL      Float
+  interval      BillingInterval
   isActive      Boolean         @default(true)
   subscriptions Subscription[]
   createdAt     DateTime        @default(now())
@@ -57,8 +58,8 @@ model Payment {
   id              String        @id @default(cuid())
   subscriptionId  String
   subscription    Subscription  @relation(fields: [subscriptionId], references: [id])
-  amount          Float // Amount in SOL
-  transactionHash String? // Solana transaction hash
+  amount          Float
+  transactionHash String?
   status          PaymentStatus @default(PENDING)
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
@@ -70,11 +71,11 @@ model Credit {
   id        String    @id @default(cuid())
   userId    String
   user      User      @relation(fields: [userId], references: [id])
-  amount    Int // Number of sites credited
-  reason    String? // Why the credit was given
-  expiresAt DateTime? // Optional expiration
+  amount    Int
+  reason    String?
+  expiresAt DateTime?
   createdAt DateTime  @default(now())
-  createdBy String // Admin wallet that created the credit
+  createdBy String
 
   @@index([userId])
 }
@@ -84,10 +85,16 @@ model Site {
   name         String
   subdomain    String?  @unique
   customDomain String?  @unique
+  profileImage String?
+  bannerImage  String?
+  description  String?  @db.Text
+  twitterUrl   String?
+  telegramUrl  String?
   userId       String
   user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  theme        Json? // Store theme colors and config
 
   @@index([userId])
 }
@@ -96,6 +103,16 @@ model Whitelist {
   id        String   @id @default(cuid())
   wallet    String   @unique
   createdAt DateTime @default(now())
+}
+
+model Message {
+  id         String   @id @default(uuid())
+  projectId  String
+  userId     String
+  content    String
+  timestamp  DateTime @default(now())
+  visibility String // "public" or "private"
+  mentions   String[] // Optional
 }
 
 enum SubStatus {

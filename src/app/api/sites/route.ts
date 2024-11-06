@@ -1,11 +1,31 @@
 // src/app/api/sites/route.ts
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getEnrichedUser } from '@/lib/auth'
 
 export async function GET(request: Request) {
   try {
-    // Get all sites or filter by user
-    const sites = await prisma.site.findMany()
+    const walletAddress = request.headers.get('x-wallet-address')
+    if (!walletAddress) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Get the authenticated user
+    const user = await getEnrichedUser(walletAddress)
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // Get sites filtered by user
+    const sites = await prisma.site.findMany({
+      where: {
+        userId: user.id,
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    })
+
     return NextResponse.json({ sites })
   } catch (error) {
     console.error('Error fetching sites:', error)

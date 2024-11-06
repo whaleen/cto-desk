@@ -2,17 +2,17 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { WalletProviders } from '@/providers/WalletProvider';
-import "./globals.css";
+import "../globals.css";
 import { StrictMode } from 'react';
 import ThemeController from '@/components/ThemeController';
 import { WalletButton } from '@/components/WalletButton';
-import './wallet-modal.css';
+import '../wallet-modal.css';
 import { Suspense } from 'react';
-import Loading from './loading';
+import Loading from '../loading';
 import Link from 'next/link';
 
 const firaCode = localFont({
-  src: "./fonts/FiraCode-Light.woff2",
+  src: "../fonts/FiraCode-Light.woff2",
   variable: "--font-fira-code",
   weight: "400",
 });
@@ -57,7 +57,6 @@ export default function RootLayout({
                 <div className="navbar-end gap-2">
                   <ThemeController />
                   <WalletButton />
-
                 </div>
               </div>
 

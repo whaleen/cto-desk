@@ -3,19 +3,62 @@
 @tailwind utilities;
 
 :root {
-  --background: #000;
-  --foreground: #171717;
+  font-family: var(--font-fira-code);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+.mono-text {
+  font-family: var(--font-fira-code);
 }
 
 body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-fira-code);
+}
+
+/* Animation utilities */
+.animate-in {
+  animation-duration: 300ms;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  --enter-opacity: 0;
+  --enter-scale: 0.9;
+  animation-fill-mode: forwards;
+  opacity: var(--enter-opacity);
+  transform: scale(var(--enter-scale));
+}
+
+.fade-in {
+  animation-name: fade-in;
+}
+
+.zoom-in-50 {
+  --enter-scale: 0.5;
+  animation-name: zoom-in;
+}
+
+@keyframes fade-in {
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes zoom-in {
+  to {
+    transform: scale(1);
+  }
+}
+
+/* Optional: Add page transition */
+.page-transition {
+  animation: pageTransition 300ms ease-in-out;
+}
+
+@keyframes pageTransition {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
