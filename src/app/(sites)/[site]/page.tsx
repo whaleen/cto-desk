@@ -1,4 +1,4 @@
-// src/app/[site]/page.tsx
+// src/app/(sites)/[site]/page.tsx
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { SiteTheme } from './theme';

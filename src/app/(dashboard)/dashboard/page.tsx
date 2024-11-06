@@ -1,4 +1,4 @@
-// src/app/dashboard/page.tsx
+// src/app/(dashboard)/dashboard/page.tsx
 'use client';
 
 import { useWallet } from '@solana/wallet-adapter-react';

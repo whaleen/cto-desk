@@ -1,4 +1,4 @@
-// src/app/layout.tsx
+// src/app/(dashboard)/layout.tsx
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { WalletProviders } from '@/providers/WalletProvider';
