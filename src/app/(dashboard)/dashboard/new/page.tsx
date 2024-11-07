@@ -32,7 +32,9 @@ export default function NewSite() {
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ wallet: window.solana?.publicKey?.toString() }),
+          body: JSON.stringify({
+            wallet: (window as any).solana?.publicKey?.toString(),
+          }),
         });
 
         if (!response.ok) throw new Error('Failed to fetch user data');

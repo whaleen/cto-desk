@@ -2,7 +2,7 @@
 import React from 'react';
 
 interface PreviewIsolatorProps {
-  theme: Record<string, string>;
+  theme: React.CSSProperties;  // Change type to CSSProperties
   children: React.ReactNode;
 }
 

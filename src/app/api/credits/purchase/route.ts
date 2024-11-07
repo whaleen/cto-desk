@@ -3,6 +3,37 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getEnrichedUser } from '@/lib/auth'
 
+export async function GET(request: NextRequest) {
+  try {
+    const walletAddress = request.headers.get('x-wallet-address')
+    if (!walletAddress) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { wallet: walletAddress },
+      select: {
+        id: true,
+        wallet: true,
+        isActive: true,
+        isAdmin: true,
+      },
+    })
+
+    if (!user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    return NextResponse.json({ success: true })
+  } catch (error) {
+    console.error('Error checking credit status:', error)
+    return NextResponse.json(
+      { error: 'Failed to check status' },
+      { status: 500 }
+    )
+  }
+}
+
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()

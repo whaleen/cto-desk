@@ -1,27 +1,23 @@
 // src/app/api/sites/[id]/route.ts
-import { NextRequest, NextResponse } from 'next/server'
+import { type NextRequest } from 'next/server'
+import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getEnrichedUser } from '@/lib/auth'
 
-type Props = {
-  params: {
-    id: string
-  }
-  searchParams: { [key: string]: string | string[] | undefined }
-}
-
-export async function GET(request: NextRequest, context: Props) {
+export async function GET(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const walletAddress = request.headers.get('x-wallet-address')
+    const walletAddress = req.headers.get('x-wallet-address')
     if (!walletAddress) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Combine queries into a single transaction
     const [site, user] = await prisma.$transaction([
       prisma.site.findUnique({
         where: {
-          id: context.params.id,
+          id: params.id,
         },
         include: {
           user: {
@@ -57,22 +53,23 @@ export async function GET(request: NextRequest, context: Props) {
   }
 }
 
-export async function PATCH(request: NextRequest, context: Props) {
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
   try {
-    const walletAddress = request.headers.get('x-wallet-address')
+    const walletAddress = req.headers.get('x-wallet-address')
     if (!walletAddress) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get the authenticated user
     const user = await getEnrichedUser(walletAddress)
     if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get the site and verify ownership
     const site = await prisma.site.findUnique({
-      where: { id: context.params.id },
+      where: { id: params.id },
       include: { user: { select: { wallet: true } } },
     })
 
@@ -84,10 +81,8 @@ export async function PATCH(request: NextRequest, context: Props) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Get the update data from request body
-    const updateData = await request.json()
+    const updateData = await req.json()
 
-    // Explicitly extract only the fields we want to update
     const {
       name,
       customDomain,
@@ -99,9 +94,8 @@ export async function PATCH(request: NextRequest, context: Props) {
       theme,
     } = updateData
 
-    // Update the site with only the allowed fields
     const updatedSite = await prisma.site.update({
-      where: { id: context.params.id },
+      where: { id: params.id },
       data: {
         name,
         customDomain,

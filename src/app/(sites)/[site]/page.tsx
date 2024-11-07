@@ -4,26 +4,6 @@ import { prisma } from '@/lib/prisma';
 import { SiteData, defaultTheme } from '@/types/site';
 import { hexToHSL } from '@/utils/theme';
 
-// Reserved paths that users cannot use
-const RESERVED_PATHS = [
-  'admin',
-  'api',
-  'dashboard',
-  'login',
-  'signup',
-  'faq',
-  'contact',
-  'about',
-  'terms',
-  'privacy',
-  'help',
-  'settings',
-  'profile',
-  'search',
-  'portfolio',
-  // Add any other reserved paths here
-];
-
 export async function generateStaticParams() {
   const sites = await prisma.site.findMany({
     select: { subdomain: true },
@@ -33,17 +13,6 @@ export async function generateStaticParams() {
   }));
 }
 
-// This function can be exported to be reused in the API
-export function isValidSitePath(path: string): boolean {
-  return (
-    // Check if path is not reserved
-    !RESERVED_PATHS.includes(path.toLowerCase()) &&
-    // Check if path matches our allowed pattern
-    /^[a-z0-9][a-z0-9-]{1,61}[a-z0-9]$/.test(path) &&
-    // Prevent consecutive hyphens
-    !path.includes('--')
-  );
-}
 
 export default async function SitePage({
   params: { site },
@@ -59,7 +28,7 @@ export default async function SitePage({
         },
       },
     },
-  }) as SiteData | null;  // Type the prisma response
+  }) as unknown as SiteData | null;  // Type the prisma response
 
   if (!sitePage) {
     notFound();
