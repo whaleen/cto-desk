@@ -3,10 +3,16 @@ import { create } from 'zustand'
 
 interface WalletRefreshStore {
   lastUpdate: number
-  triggerRefresh: () => void
+  lastWallet: string | null
+  triggerRefresh: (wallet: string) => void
 }
 
 export const useWalletRefresh = create<WalletRefreshStore>((set) => ({
   lastUpdate: Date.now(),
-  triggerRefresh: () => set({ lastUpdate: Date.now() }),
+  lastWallet: null,
+  triggerRefresh: (wallet) =>
+    set({
+      lastUpdate: Date.now(),
+      lastWallet: wallet,
+    }),
 }))

@@ -1,9 +1,8 @@
+// src/components/ThemeController.tsx
 "use client";
 
-import React from 'react';
-import { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 
-const SYSTEM_THEMES = ['light', 'dark'] as const;
 const CUSTOM_THEMES = [
   'cupcake', 'bumblebee', 'emerald', 'corporate', 'synthwave', 'retro', 'cyberpunk',
   'valentine', 'halloween', 'garden', 'forest', 'aqua', 'lofi', 'pastel', 'fantasy',
@@ -11,7 +10,7 @@ const CUSTOM_THEMES = [
   'lemonade', 'night', 'coffee', 'winter', 'dim', 'nord', 'sunset'
 ] as const;
 
-type SystemTheme = typeof SYSTEM_THEMES[number];
+type SystemTheme = 'light' | 'dark';
 type CustomTheme = typeof CUSTOM_THEMES[number];
 type Theme = SystemTheme | CustomTheme;
 

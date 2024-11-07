@@ -2,97 +2,37 @@
 'use client';
 
 import { useWallet } from '@solana/wallet-adapter-react';
-import { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { WalletButton } from '@/components/WalletButton';
 import { useWalletStore } from '@/stores/useWalletStore';
+import { useWalletRefresh } from '@/stores/useWalletRefresh';
 import Link from 'next/link';
 import PurchaseCredits from '@/components/PurchaseCredits';
-import { useRouter } from 'next/navigation'
-
-
-
-
-interface Site {
-  id: string;
-  name: string;
-  subdomain: string | null;
-  customDomain: string | null;
-}
-
-interface UserData {
-  id: string;
-  wallet: string;
-  isActive: boolean;
-  isAdmin: boolean;
-  createdAt: string;
-  creditBalance: number; // Add this
-}
 
 export default function Dashboard() {
   const { connected } = useWallet();
-  const currentAddress = useWalletStore(state => state.currentAddress);
-  const [isWhitelisted, setIsWhitelisted] = useState(false);
-  const [sites, setSites] = useState<Site[]>([]);
-  const [userData, setUserData] = useState<UserData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const router = useRouter()
+  const {
+    currentAddress,
+    userData,
+    sites,
+    isWhitelisted,
+    sitesLoading,
+    userDataLoading,
+    error,
+    refreshAll
+  } = useWalletStore();
+  const lastUpdate = useWalletRefresh((state) => state.lastUpdate);
 
-  // Check access when wallet changes
+  const loading = sitesLoading || userDataLoading;
+
+  // Combined effect for initial load and wallet changes
   useEffect(() => {
+    console.log('Dashboard effect triggered:', { lastUpdate, currentAddress, connected });
+
     if (connected && currentAddress) {
-      checkAccess();
+      refreshAll();
     }
-  }, [connected, currentAddress]);
-
-  const checkAccess = async () => {
-    if (!currentAddress) return;
-
-    try {
-      setLoading(true);
-      console.log('Checking access for wallet:', currentAddress);
-
-      const res = await fetch('/api/auth/check', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          wallet: currentAddress
-        }),
-      });
-
-      if (!res.ok) {
-        throw new Error('Failed to verify access');
-      }
-
-      const data = await res.json();
-      setIsWhitelisted(data.isActive);
-      setUserData(data.user);
-
-      // Assuming the API now returns creditBalance with user data
-      setUserData(data.user);
-
-      if (data.isActive) {
-        const sitesRes = await fetch('/api/sites', {
-          headers: {
-            'Content-Type': 'application/json',
-            'x-wallet-address': currentAddress
-          }
-        });
-
-        if (!sitesRes.ok) {
-          throw new Error('Failed to fetch sites');
-        }
-
-        const sitesData = await sitesRes.json();
-        setSites(sitesData.sites);
-      }
-    } catch (err) {
-      console.error('Error checking access:', err);
-      setError(err instanceof Error ? err.message : 'Failed to check access');
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, [lastUpdate, connected, currentAddress, refreshAll]);
 
   if (loading) {
     return (
@@ -148,9 +88,11 @@ export default function Dashboard() {
       )}
 
       {userData?.isAdmin && (
-        <a href="/admin" className="btn btn-xs badge-primary">
-          Admin
-        </a>
+        <Link href="/admin">
+          <span className="btn btn-xs badge-primary">
+            Admin
+          </span>
+        </Link>
       )}
 
       {/* Add transition animations to user stats */}
@@ -220,9 +162,12 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
-          <PurchaseCredits onSuccess={checkAccess} />
+          <PurchaseCredits onSuccess={() => {
+            refreshAll();
+          }} />
         </div>
       )}
+
 
       {/* Sites Grid */}
       <div className="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -231,7 +176,7 @@ export default function Dashboard() {
           <div className="card-body">
             <h2 className="card-title">Create New Site</h2>
             <p>Start building your new presence</p>
-            {userData.creditBalance > 0 ? (
+            {userData && userData.creditBalance > 0 ? (
               <div className="text-sm opacity-70">
                 Uses 1 credit to deploy
               </div>
@@ -244,7 +189,7 @@ export default function Dashboard() {
               <Link href="/dashboard/new">
                 <button
                   className="btn btn-primary"
-                  disabled={userData.creditBalance === 0}
+                  disabled={!userData || userData.creditBalance === 0}
                 >
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
                     <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -278,8 +223,8 @@ export default function Dashboard() {
                 >
                   Edit
                 </button>
-                <Link href={`/${site.subdomain}`}>
-                  <button className="btn btn-primary btn-sm">View</button>
+                <Link href={`/${site.subdomain}`} target='_blank'>
+                  <span className="btn btn-primary btn-sm">View</span>
                 </Link>
               </div>
             </div>

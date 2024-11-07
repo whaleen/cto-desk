@@ -6,7 +6,7 @@ import { getEnrichedUser } from '@/lib/auth'
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { wallet, signature, message } = body
+    const { wallet } = body
 
     // Get the authenticated user using getEnrichedUser
     const user = await getEnrichedUser(wallet)

@@ -10,7 +10,7 @@ export async function getEnrichedUser(wallet: string) {
       isActive: true,
       isAdmin: true,
       createdAt: true,
-      creditBalance: true, // Add this to the schema if not present
+      creditBalance: true,
     },
   })
 

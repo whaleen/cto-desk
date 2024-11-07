@@ -29,12 +29,12 @@ export interface SiteData {
 }
 
 export const defaultTheme: SiteTheme = {
-  primary: '#570df8',
-  secondary: '#f000b8',
-  accent: '#37cdbe',
-  neutral: '#3d4451',
-  'base-100': '#ffffff',
-  'base-200': '#f2f2f2',
-  'base-300': '#e5e6e6',
-  'base-content': '#1f2937',
+  primary: '#570df8', // Purple
+  secondary: '#f000b8', // Pink
+  accent: '#37cdbe', // Teal
+  neutral: '#3d4451', // Gray
+  'base-100': '#ffffff', // White
+  'base-200': '#f2f2f2', // Light Gray
+  'base-300': '#e5e6e6', // Lighter Gray
+  'base-content': '#1f2937', // Dark Gray
 }

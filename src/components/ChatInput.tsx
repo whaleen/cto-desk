@@ -2,10 +2,17 @@
 
 import { Dispatch, SetStateAction, useState } from 'react'
 
+interface Message {
+  id: string
+  content: string
+  projectId: string
+  visibility: 'public' | 'private'
+}
+
 interface ChatInputProps {
   projectId: string
   visibility: 'public' | 'private'
-  setMessages: Dispatch<SetStateAction<any[]>>
+  setMessages: Dispatch<SetStateAction<Message[]>>
 }
 
 export default function ChatInput({
@@ -21,7 +28,7 @@ export default function ChatInput({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ projectId, content: newMessage, visibility }),
     })
-    const message = await response.json()
+    const message: Message = await response.json()
     setMessages((prevMessages) => [message, ...prevMessages])
     setNewMessage('')
   }

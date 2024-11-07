@@ -9,9 +9,9 @@ import { clusterApiUrl, type Commitment, PublicKey } from '@solana/web3.js';
 import dynamic from 'next/dynamic';
 import { type FC, type ReactNode, useMemo, useEffect } from 'react';
 import { useWalletStore } from '@/stores/useWalletStore';
+import { useWalletRefresh } from '@/stores/useWalletRefresh';
 
-
-
+// eslint-disable-next-line @typescript-eslint/no-require-imports
 require('@solana/wallet-adapter-react-ui/styles.css');
 
 interface PhantomEvent {
@@ -38,8 +38,10 @@ const WalletStateHandler: FC<{ children: ReactNode }> = ({ children }) => {
   const { connected, publicKey } = useWallet();
   const setWalletState = useWalletStore(state => state.setWalletState);
   const setCurrentAddress = useWalletStore(state => state.setCurrentAddress);
+  const refreshAll = useWalletStore(state => state.refreshAll);
+  const triggerRefresh = useWalletRefresh(state => state.triggerRefresh);
 
-  console.log('WalletStateHandler:', { connected, publicKey });
+  // console.log('WalletStateHandler:', { connected, publicKey });
 
   const updateWalletState = async (address: string) => {
     try {
@@ -56,10 +58,18 @@ const WalletStateHandler: FC<{ children: ReactNode }> = ({ children }) => {
           isAdmin: data.isAdmin,
           isWhitelisted: data.isActive,
           wallet: address,
-          isInitialized: true  // Add this
-
+          isInitialized: true,
+          error: null,
+          refreshAll,
         });
+
+        // After wallet state is updated, refresh all data
+        await refreshAll();
+        // Trigger wallet refresh to notify components
+        triggerRefresh(address);
       } else {
+        // Log response if the status is not OK
+        console.error('Failed to verify wallet. Status:', res.status, res.statusText);
         throw new Error('Failed to verify wallet');
       }
     } catch (error) {
@@ -69,17 +79,20 @@ const WalletStateHandler: FC<{ children: ReactNode }> = ({ children }) => {
         isAdmin: false,
         isWhitelisted: false,
         wallet: null,
-        isInitialized: true  // Add this
+        isInitialized: true,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        refreshAll,
       });
     }
   };
 
+
   // Handle wallet connection changes
   useEffect(() => {
-    console.log('WalletStateHandler Effect:', {
-      connected,
-      publicKey: publicKey?.toString()
-    });
+    // console.log('WalletStateHandler Effect:', {
+    //   connected,
+    //   publicKey: publicKey?.toString()
+    // });
 
     if (connected && publicKey) {
       const address = publicKey.toString();
@@ -94,14 +107,16 @@ const WalletStateHandler: FC<{ children: ReactNode }> = ({ children }) => {
         isAdmin: false,
         isWhitelisted: false,
         wallet: null,
-        isInitialized: true  // Add this
+        isInitialized: true,
+        error: null,
+        refreshAll
       });
     }
   }, [connected, publicKey, setCurrentAddress, setWalletState]);
 
   // Handle Phantom account changes
   useEffect(() => {
-    const handleAccountChange = async (event: PhantomEvent) => {
+    const handleAccountChange = async () => {
       const phantom = (window as WindowWithPhantom).phantom?.solana;
       if (phantom?.publicKey) {
         const newAddress = phantom.publicKey.toString();

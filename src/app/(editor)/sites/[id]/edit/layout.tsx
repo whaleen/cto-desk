@@ -7,7 +7,7 @@ export default function EditLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div data-theme="light" className="min-h-screen bg-base-100">
+    <div className="min-h-screen bg-base-100">
       {children}
     </div>
   );

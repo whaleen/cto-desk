@@ -1,7 +1,8 @@
 // src/app/(sites)/[site]/page.tsx
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
-import { SiteTheme } from './theme';
+import { SiteData, defaultTheme } from '@/types/site';
+import { hexToHSL } from '@/utils/theme';
 
 // Reserved paths that users cannot use
 const RESERVED_PATHS = [
@@ -44,32 +45,11 @@ export function isValidSitePath(path: string): boolean {
   );
 }
 
-interface SiteData {
-  id: string;
-  name: string;
-  subdomain: string;
-  customDomain: string | null;
-  profileImage: string | null;
-  bannerImage: string | null;
-  description: string | null;
-  twitterUrl: string | null;
-  telegramUrl: string | null;
-  theme: any; // We'll type this properly when we implement themes
-  user: {
-    wallet: string;
-  };
-}
-
 export default async function SitePage({
   params: { site },
 }: {
   params: { site: string };
 }) {
-  // Check if this is a reserved path
-  if (RESERVED_PATHS.includes(site.toLowerCase())) {
-    notFound();
-  }
-
   const sitePage = await prisma.site.findUnique({
     where: { subdomain: site },
     include: {
@@ -79,20 +59,36 @@ export default async function SitePage({
         },
       },
     },
-  });
-
+  }) as SiteData | null;  // Type the prisma response
 
   if (!sitePage) {
     notFound();
   }
 
+  // Use the same DaisyUI CSS variables as the edit page
+  const themeStyles = {
+    '--p': hexToHSL(sitePage.theme?.primary ?? defaultTheme.primary),
+    '--s': hexToHSL(sitePage.theme?.secondary ?? defaultTheme.secondary),
+    '--a': hexToHSL(sitePage.theme?.accent ?? defaultTheme.accent),
+    '--n': hexToHSL(sitePage.theme?.neutral ?? defaultTheme.neutral),
+    '--b1': hexToHSL(sitePage.theme?.['base-100'] ?? defaultTheme['base-100']),
+    '--b2': hexToHSL(sitePage.theme?.['base-200'] ?? defaultTheme['base-200']),
+    '--b3': hexToHSL(sitePage.theme?.['base-300'] ?? defaultTheme['base-300']),
+    '--bc': hexToHSL(sitePage.theme?.['base-content'] ?? defaultTheme['base-content']),
+    '--pf': hexToHSL(sitePage.theme?.primary ?? defaultTheme.primary),
+    '--sf': hexToHSL(sitePage.theme?.secondary ?? defaultTheme.secondary),
+    '--af': hexToHSL(sitePage.theme?.accent ?? defaultTheme.accent),
+    '--nf': hexToHSL(sitePage.theme?.neutral ?? defaultTheme.neutral),
+  } as React.CSSProperties;
+
+
   return (
-    <div
-      data-theme={sitePage.theme?.name || "light"}
-      className="min-h-screen"
-    >
+    <div className="site-theme" style={themeStyles}>
       {/* Banner Section */}
-      <div className="relative w-full h-48 md:h-64 bg-base-200">
+      <div
+        className="relative w-full h-48 md:h-64"
+        style={{ backgroundColor: sitePage.theme?.['base-200'] }}
+      >
         {sitePage.bannerImage ? (
           <img
             src={sitePage.bannerImage}
@@ -100,7 +96,12 @@ export default async function SitePage({
             className="w-full h-full object-cover"
           />
         ) : (
-          <div className="w-full h-full bg-gradient-to-r from-primary to-secondary opacity-20" />
+          <div
+            className="w-full h-full opacity-20"
+            style={{
+              background: `linear-gradient(to right, ${sitePage.theme?.primary || '#000'}, ${sitePage.theme?.secondary || '#000'})`
+            }}
+          />
         )}
       </div>
 
@@ -109,7 +110,13 @@ export default async function SitePage({
         <div className="relative -mt-20 mb-8">
           <div className="flex flex-col md:flex-row items-center md:items-end gap-4">
             {/* Profile Image */}
-            <div className="w-32 h-32 rounded-full border-4 border-base-100 overflow-hidden bg-base-200">
+            <div
+              className="w-32 h-32 rounded-full border-4 overflow-hidden"
+              style={{
+                borderColor: sitePage.theme?.['base-100'],
+                backgroundColor: sitePage.theme?.['base-200']
+              }}
+            >
               {sitePage.profileImage ? (
                 <img
                   src={sitePage.profileImage}
@@ -117,14 +124,17 @@ export default async function SitePage({
                   className="w-full h-full object-cover"
                 />
               ) : (
-                <div className="w-full h-full bg-base-300" />
+                <div
+                  className="w-full h-full"
+                  style={{ backgroundColor: sitePage.theme?.['base-300'] }}
+                />
               )}
             </div>
 
             {/* Profile Info */}
             <div className="text-center md:text-left">
               <h1 className="text-3xl font-bold mb-2">{sitePage.name}</h1>
-              <p className="text-base-content/60 font-mono">
+              <p style={{ color: `${sitePage.theme?.['base-content']}99` }} className="font-mono">
                 {sitePage.user.wallet.slice(0, 4)}...{sitePage.user.wallet.slice(-4)}
               </p>
             </div>
@@ -133,7 +143,10 @@ export default async function SitePage({
 
         {/* Description */}
         {sitePage.description && (
-          <div className="card bg-base-200 mb-8">
+          <div
+            className="card mb-8"
+            style={{ backgroundColor: sitePage.theme?.['base-200'] }}
+          >
             <div className="card-body">
               <p className="whitespace-pre-wrap">{sitePage.description}</p>
             </div>
@@ -148,7 +161,12 @@ export default async function SitePage({
                 href={sitePage.twitterUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-primary btn-outline"
+                className="btn-outline-custom"
+                style={{
+                  borderColor: sitePage.theme?.primary,
+                  color: sitePage.theme?.primary,
+                  '--hover-bg': sitePage.theme?.primary
+                } as React.CSSProperties}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -165,7 +183,12 @@ export default async function SitePage({
                 href={sitePage.telegramUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="btn btn-primary btn-outline"
+                className="btn-outline-custom"
+                style={{
+                  borderColor: sitePage.theme?.primary,
+                  color: sitePage.theme?.primary,
+                  '--hover-bg': sitePage.theme?.primary
+                } as React.CSSProperties}
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"

@@ -62,3 +62,33 @@ body {
     transform: translateY(0);
   }
 }
+
+
+.theme-preview {
+  isolation: isolate;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.1);
+}
+
+.theme-preview * {
+  border-color: rgba(0, 0, 0, 0.1);
+}
+
+.theme-preview .divider {
+  margin: 2rem 0;
+  height: 1px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+
+.preview-isolator {
+  isolation: isolate;
+  background: var(--b1);
+  color: var(--bc);
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.preview-isolator * {
+  color-scheme: light;
+}
